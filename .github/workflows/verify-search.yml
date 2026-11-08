@@ -1,0 +1,32 @@
+name: MiniAgent Search Smoke Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/verify-search.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  search-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call live MiniAgent search
+        shell: bash
+        run: |
+          set -euo pipefail
+          RESPONSE="$(curl --silent --show-error --fail --max-time 50 \
+            -X POST "https://hmorfwnrkrcvzjzkdmuh.supabase.co/functions/v1/miniagent" \
+            -H "Content-Type: application/json" \
+            -H "apikey: sb_publishable_uvrg6vlJiReX7h9BuViBWg_RM2-tlQI" \
+            -H "Origin: https://lulu304h.github.io" \
+            --data '{"action":"search","query":"Python programming language official documentation"}')"
+          echo "$RESPONSE" | jq .
+          echo "$RESPONSE" | jq -e '.items | length > 0' >/dev/null
+          echo "$RESPONSE" | jq -e '.provider and (.stored >= 0)' >/dev/null
+          echo "Provider: $(echo "$RESPONSE" | jq -r '.provider')"
+          echo "Results: $(echo "$RESPONSE" | jq -r '.items | length')"
+          echo "Queue inserts: $(echo "$RESPONSE" | jq -r '.stored')"
